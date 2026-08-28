@@ -45,6 +45,13 @@ vi.mock("widgets/widgets", () => ({
       mappings: {
         authv1: { endpoint: "api/auth" },
         authv2: { endpoint: "api/auth/v2" },
+        alerts: {
+          endpoint: "collections/alerts/records?filter=triggered%3Dtrue&fields=id%2Ctriggered&perPage=500",
+        },
+        alertsSystem: {
+          endpoint:
+            "collections/alerts/records?filter=system%3D%27{systemId}%27%20%26%26%20triggered%3Dtrue&fields=id%2Ctriggered&perPage=500",
+        },
       },
     },
   },

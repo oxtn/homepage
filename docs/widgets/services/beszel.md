@@ -11,8 +11,10 @@ The `systemID` is the `id` field on the collections page of Beszel under the Poc
 
 A "superuser" is currently required to access the data from the Beszel API.
 
-Allowed fields for 'overview' mode: `["systems", "up"]`
-Allowed fields for a single system: `["name", "status", "updated", "cpu", "memory", "disk", "network"]`
+Allowed fields for 'overview' mode: `["systems", "up", "alerts"]`
+Allowed fields for a single system: `["name", "status", "updated", "cpu", "memory", "disk", "network", "alerts"]`
+
+The `alerts` field displays the count of actively-triggered threshold alerts. The count badge is highlighted red when one or more alerts are firing, and neutral when none are.
 
 | Beszel Version | Homepage Widget Version |
 | -------------- | ----------------------- |
@@ -27,4 +29,8 @@ widget:
   password: password
   systemId: systemId # optional
   version: 2 # optional, default is 1
+  fields: # optional — defaults shown per mode
+    - alerts
+    - systems
+    - up
 ```

@@ -5,8 +5,8 @@ import { useTranslation } from "next-i18next/pages";
 import useWidgetAPI from "utils/proxy/use-widget-api";
 import withWidgetFields from "utils/widget-fields";
 
-const SUMMARY_FIELDS = ["systems", "up"];
-const SYSTEM_FIELDS = ["name", "status", "cpu", "memory"];
+const SUMMARY_FIELDS = ["systems", "up", "alerts"];
+const SYSTEM_FIELDS = ["name", "status", "cpu", "memory", "alerts"];
 
 export default function Component({ service: configuredService }) {
   const { t } = useTranslation();
@@ -17,9 +17,10 @@ export default function Component({ service: configuredService }) {
   const { systemId } = widget;
 
   const { data: systems, error: systemsError } = useWidgetAPI(widget, "systems");
+  const { data: alerts, error: alertsError } = useWidgetAPI(widget, widget.fields.includes("alerts") ? "alerts" : "");
 
   let system = null;
-  let finalError = systemsError;
+  let finalError = systemsError ?? alertsError;
 
   if (systems && !systems.items) {
     finalError = { message: "No items returned from beszel API" };
@@ -42,6 +43,11 @@ export default function Component({ service: configuredService }) {
       </Container>
     );
   }
+
+  const alertItems = alerts?.items ?? [];
+  const activeAlerts = systemId
+    ? alertItems.filter((a) => a.system === system?.id).length
+    : alertItems.length;
 
   if (system) {
     return (
@@ -69,6 +75,7 @@ export default function Component({ service: configuredService }) {
           value={t("common.byterate", { value: system.info.bb, maximumFractionDigits: 2 })}
           highlightValue={system.info.bb}
         />
+        <Block label="beszel.alerts" value={activeAlerts} />
       </Container>
     );
   }
@@ -79,6 +86,7 @@ export default function Component({ service: configuredService }) {
     <Container service={service}>
       <Block label="beszel.systems" value={systems.totalItems} />
       <Block label="beszel.up" value={`${upTotal} / ${systems.totalItems}`} />
+      <Block label="beszel.alerts" value={activeAlerts} />
     </Container>
   );
 }
