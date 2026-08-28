@@ -5,8 +5,8 @@ import { useTranslation } from "next-i18next/pages";
 import useWidgetAPI from "utils/proxy/use-widget-api";
 import withWidgetFields from "utils/widget-fields";
 
-const SUMMARY_FIELDS = ["systems", "up", "alerts"];
-const SYSTEM_FIELDS = ["name", "status", "cpu", "memory", "alerts"];
+const SUMMARY_FIELDS = ["systems", "up"];
+const SYSTEM_FIELDS = ["name", "status", "cpu", "memory"];
 
 export default function Component({ service: configuredService }) {
   const { t } = useTranslation();
@@ -15,9 +15,10 @@ export default function Component({ service: configuredService }) {
   const service = withWidgetFields(configuredService, defaultFields);
   const { widget } = service;
   const { systemId } = widget;
+  const includeAlerts = widget.fields.includes("alerts");
 
   const { data: systems, error: systemsError } = useWidgetAPI(widget, "systems");
-  const { data: alerts, error: alertsError } = useWidgetAPI(widget, widget.fields.includes("alerts") ? "alerts" : "");
+  const { data: alerts, error: alertsError } = useWidgetAPI(widget, includeAlerts ? "alerts" : "");
 
   let system = null;
   let finalError = systemsError ?? alertsError;
@@ -40,6 +41,7 @@ export default function Component({ service: configuredService }) {
       <Container service={service}>
         <Block label="beszel.systems" />
         <Block label="beszel.up" />
+        <Block label="beszel.alerts" />
       </Container>
     );
   }

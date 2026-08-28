@@ -12,8 +12,6 @@ vi.mock("utils/proxy/use-widget-api", () => ({ default: useWidgetAPI }));
 
 import Component from "./component";
 
-// Helper: mock both the systems and alerts useWidgetAPI calls.
-// useWidgetAPI is called in order: first for "systems", then for "alerts"/"alertsSystem".
 function mockAPIs(systemsResult, alertsResult = { data: { items: [], totalItems: 0 }, error: undefined }) {
   useWidgetAPI.mockReturnValueOnce(systemsResult).mockReturnValueOnce(alertsResult);
 }
@@ -33,6 +31,18 @@ describe("widgets/beszel/component", () => {
     expect(container.querySelectorAll(".service-block")).toHaveLength(2);
     expect(screen.getByText("beszel.systems")).toBeInTheDocument();
     expect(screen.getByText("beszel.up")).toBeInTheDocument();
+  });
+  it("renders placeholders while loading (alerts field)", () => {
+    mockAPIs({ data: undefined, error: undefined }, { data: undefined, error: undefined });
+
+    const service = { widget: { type: "beszel", fields: ["alerts"] } };
+    const { container } = renderWithProviders(<Component service={service} />, { settings: { hideErrors: false } });
+
+    expect(service.widget.fields).toEqual(["alerts"]);
+    expect(container.querySelectorAll(".service-block")).toHaveLength(1);
+    expect(screen.queryByText("beszel.systems")).toBeNull();
+    expect(screen.queryByText("beszel.up")).toBeNull();
+    expect(screen.getByText("beszel.alerts")).toBeInTheDocument();
   });
 
   it("renders system totals when loaded (systems view)", () => {
@@ -153,7 +163,6 @@ describe("widgets/beszel/component", () => {
         error: undefined,
       },
       {
-        // Two alerts for sys1, one for a different system — only sys1's two should be counted.
         data: { items: [{ id: "a1", system: "sys1" }, { id: "a2", system: "sys1" }, { id: "a3", system: "other" }], totalItems: 3 },
         error: undefined,
       },

@@ -1102,7 +1102,8 @@
       "cpu": "CPU",
       "memory": "MEM",
       "disk": "Disk",
-      "network": "NET"
+      "network": "NET",
+      "alerts": "Alerts"
     },
     "argocd": {
         "apps": "Apps",
