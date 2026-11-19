@@ -165,4 +165,85 @@ describe("widgets/beszel/component", () => {
 
     expect(screen.getByText("System with id missing not found")).toBeInTheDocument();
   });
+
+  it("renders alerts count in overview mode when alerts field is specified", () => {
+    useWidgetAPI
+      .mockReturnValueOnce({
+        data: { totalItems: 2, items: [{ status: "up" }, { status: "up" }] },
+        error: undefined,
+      })
+      .mockReturnValueOnce({
+        data: { items: [{ id: "a1" }, { id: "a2" }, { id: "a3" }], totalItems: 3 },
+        error: undefined,
+      });
+
+    const service = { widget: { type: "beszel", fields: ["systems", "up", "alerts"] } };
+    const { container } = renderWithProviders(<Component service={service} />, { settings: { hideErrors: false } });
+
+    expect(container.querySelectorAll(".service-block")).toHaveLength(3);
+    expectBlockValue(container, "beszel.alerts", 3);
+  });
+
+  it("renders alerts count in single system mode when alerts field is specified", () => {
+    useWidgetAPI
+      .mockReturnValueOnce({
+        data: {
+          totalItems: 1,
+          items: [
+            { id: "sys1", name: "MySystem", status: "up", updated: 123, info: { cpu: 10, mp: 20, dp: 30, bb: 14.5 } },
+          ],
+        },
+        error: undefined,
+      })
+      .mockReturnValueOnce({
+        data: {
+          items: [
+            { id: "a1", system: "sys1" },
+            { id: "a2", system: "sys1" },
+            { id: "a3", system: "other" },
+          ],
+          totalItems: 3,
+        },
+        error: undefined,
+      });
+
+    const service = { widget: { type: "beszel", systemId: "sys1", fields: ["name", "alerts"] } };
+    const { container } = renderWithProviders(<Component service={service} />, { settings: { hideErrors: false } });
+
+    expect(container.querySelectorAll(".service-block")).toHaveLength(2);
+    expectBlockValue(container, "beszel.alerts", 2);
+  });
+
+  it("renders loading placeholders while alerts are still loading", () => {
+    useWidgetAPI
+      .mockReturnValueOnce({ data: { totalItems: 1, items: [{ status: "up" }] }, error: undefined })
+      .mockReturnValueOnce({ data: undefined, error: undefined });
+
+    const service = { widget: { type: "beszel", fields: ["systems", "alerts"] } };
+    const { container } = renderWithProviders(<Component service={service} />, { settings: { hideErrors: false } });
+
+    expect(container.querySelectorAll(".service-block")).toHaveLength(2);
+    expect(container.querySelectorAll(".animate-pulse")).toHaveLength(2);
+  });
+
+  it("does not request alerts endpoint when alerts field is not enabled", () => {
+    useWidgetAPI.mockReturnValue({ data: { totalItems: 1, items: [{ status: "up" }] }, error: undefined });
+
+    const service = { widget: { type: "beszel", fields: ["systems", "up"] } };
+    renderWithProviders(<Component service={service} />, { settings: { hideErrors: false } });
+
+    expect(useWidgetAPI).toHaveBeenCalledWith(expect.objectContaining({ type: "beszel" }), "systems");
+    expect(useWidgetAPI).toHaveBeenCalledWith(expect.objectContaining({ type: "beszel" }), "");
+  });
+
+  it("renders error when alerts endpoint returns an error", () => {
+    useWidgetAPI
+      .mockReturnValueOnce({ data: { totalItems: 1, items: [{ status: "up" }] }, error: undefined })
+      .mockReturnValueOnce({ data: undefined, error: { message: "Alerts API failed" } });
+
+    const service = { widget: { type: "beszel", fields: ["systems", "alerts"] } };
+    renderWithProviders(<Component service={service} />, { settings: { hideErrors: false } });
+
+    expect(screen.getByText("Alerts API failed")).toBeInTheDocument();
+  });
 });

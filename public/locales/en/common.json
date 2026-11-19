@@ -1151,7 +1151,8 @@
       "services": "Services",
       "updates": "Updates",
       "battery": "Battery",
-      "agent": "Agent"
+      "agent": "Agent",
+      "alerts": "Alerts"
     },
     "argocd": {
         "apps": "Apps",

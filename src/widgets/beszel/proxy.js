@@ -73,14 +73,18 @@ export default async function beszelProxyHandler(req, res) {
       });
 
       const badRequest = [400, 401, 403].includes(status);
+      const mapping = Object.values(widgets[widget.type].mappings ?? {}).find((m) => m.endpoint === endpoint);
+      const allowEmpty = mapping?.allowEmpty === true;
       const text = data.toString("utf-8");
       let isEmpty = false;
 
-      try {
-        const json = JSON.parse(text);
-        isEmpty = Array.isArray(json.items) && json.items.length === 0;
-      } catch (err) {
-        logger.debug("Failed to parse Beszel response JSON:", err);
+      if (!allowEmpty) {
+        try {
+          const json = JSON.parse(text);
+          isEmpty = Array.isArray(json.items) && json.items.length === 0;
+        } catch (err) {
+          logger.debug("Failed to parse Beszel response JSON:", err);
+        }
       }
 
       if (badRequest || isEmpty) {

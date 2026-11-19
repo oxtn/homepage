@@ -15,11 +15,13 @@ export default function Component({ service: configuredService }) {
   const service = withWidgetFields(configuredService, defaultFields);
   const { widget } = service;
   const { systemId } = widget;
+  const includeAlerts = widget.fields.includes("alerts");
 
   const { data: systems, error: systemsError } = useWidgetAPI(widget, "systems");
+  const { data: alerts, error: alertsError } = useWidgetAPI(widget, includeAlerts ? "alerts" : "");
 
   let system = null;
-  let finalError = systemsError;
+  let finalError = systemsError ?? alertsError;
 
   if (systems && !systems.items) {
     finalError = { message: "No items returned from beszel API" };
@@ -34,14 +36,20 @@ export default function Component({ service: configuredService }) {
     return <Container service={service} error={finalError} />;
   }
 
-  if (!systems) {
+  if (!systems || (includeAlerts && !alerts)) {
     return (
       <Container service={service}>
         <Block label="beszel.systems" />
         <Block label="beszel.up" />
+        <Block label="beszel.alerts" />
       </Container>
     );
   }
+
+  const alertItems = alerts?.items ?? [];
+  const activeAlerts = systemId
+    ? alertItems.filter((a) => a.system === system?.id).length
+    : (alerts?.totalItems ?? alertItems.length);
 
   if (system) {
     return (
@@ -106,6 +114,11 @@ export default function Component({ service: configuredService }) {
           highlightValue={system.info.bat?.[0]}
         />
         <Block label="beszel.agent" value={system.info.v} />
+        <Block
+          label="beszel.alerts"
+          value={t("common.number", { value: activeAlerts })}
+          highlightValue={activeAlerts}
+        />
       </Container>
     );
   }
@@ -116,6 +129,7 @@ export default function Component({ service: configuredService }) {
     <Container service={service}>
       <Block label="beszel.systems" value={systems.totalItems} />
       <Block label="beszel.up" value={`${upTotal} / ${systems.totalItems}`} />
+      <Block label="beszel.alerts" value={t("common.number", { value: activeAlerts })} highlightValue={activeAlerts} />
     </Container>
   );
 }

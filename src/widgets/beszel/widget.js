@@ -14,6 +14,10 @@ const widget = {
     systems: {
       endpoint: "collections/systems/records?page=1&perPage=500&sort=%2Bcreated",
     },
+    alerts: {
+      endpoint: "collections/alerts/records?filter=triggered%3Dtrue&fields=id%2Ctriggered%2Csystem&perPage=500",
+      allowEmpty: true,
+    },
   },
 };
 

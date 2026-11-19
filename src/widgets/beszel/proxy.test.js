@@ -45,6 +45,10 @@ vi.mock("widgets/widgets", () => ({
       mappings: {
         authv1: { endpoint: "api/auth" },
         authv2: { endpoint: "api/auth/v2" },
+        alerts: {
+          endpoint: "collections/alerts/records?filter=triggered%3Dtrue&fields=id%2Ctriggered%2Csystem&perPage=500",
+          allowEmpty: true,
+        },
       },
     },
   },
@@ -113,6 +117,36 @@ describe("widgets/beszel/proxy", () => {
     expect(httpProxy.mock.calls[1][0]).toBe("http://beszel/api/auth");
     expect(httpProxy.mock.calls[2][1].headers.Authorization).toBe("Bearer new");
     expect(res.send).toHaveBeenCalledWith(Buffer.from(JSON.stringify({ items: [1] })));
+  });
+
+  it("does not re-login when alerts endpoint returns an empty list", async () => {
+    cache.put("beszelProxyHandler__token.svc", "valid-token");
+
+    getServiceWidget.mockResolvedValue({
+      type: "beszel",
+      url: "http://beszel",
+      username: "u",
+      password: "p",
+    });
+
+    const emptyAlerts = Buffer.from(JSON.stringify({ items: [], totalItems: 0 }));
+    httpProxy.mockResolvedValueOnce([200, "application/json", emptyAlerts]);
+
+    const req = {
+      query: {
+        group: "g",
+        service: "svc",
+        endpoint: "collections/alerts/records?filter=triggered%3Dtrue&fields=id%2Ctriggered%2Csystem&perPage=500",
+        index: "0",
+      },
+    };
+    const res = createMockRes();
+
+    await beszelProxyHandler(req, res);
+
+    expect(httpProxy).toHaveBeenCalledTimes(1);
+    expect(cache.del).not.toHaveBeenCalled();
+    expect(res.send).toHaveBeenCalledWith(emptyAlerts);
   });
 
   it("retries after a 401 by clearing cache and logging in again", async () => {
